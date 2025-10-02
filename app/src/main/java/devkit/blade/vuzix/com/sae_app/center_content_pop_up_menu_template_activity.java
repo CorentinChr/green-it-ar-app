@@ -123,12 +123,12 @@ public class center_content_pop_up_menu_template_activity extends ActionMenuActi
 
     public void showbottomlock(MenuItem item)
     {
-        startActivity(new Intent(this, around_content_template_activity.class));
+        startActivity(new Intent(this, QuizActivity.class));
     }
 
     public void showpopUp(MenuItem item)
     {
-        startActivity(new Intent(this, center_content_template_activity.class));
+        startActivity(new Intent(this, QuizActivity.class));
     }
 
 

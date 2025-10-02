@@ -37,6 +37,8 @@
         <activity android:name="devkit.blade.vuzix.com.sae_app.center_content_pop_up_menu_template_activity">
         </activity>
 
+        <activity android:name="devkit.blade.vuzix.com.sae_app.QuizActivity" />
+
         <receiver android:name="devkit.blade.vuzix.com.sae_app.Template_Widget"
                   android:exported="true">
             <intent-filter>
