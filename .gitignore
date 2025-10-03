@@ -1,10 +1,12 @@
 # Android Studio / IntelliJ
 .idea/
+.idea/caches
 
 # Gradle
 .gradle/
 build/
 **/build/
+local.properties
 
 # Logs
 *.log
