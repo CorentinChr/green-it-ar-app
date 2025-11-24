@@ -4,7 +4,7 @@
 
     <!--This are the main Navigation Items for the Application. The ActionMenu Activity will expand this menu and make it its main navigation input with Animation-->
     <item android:id="@+id/action_menu_item1" android:title="@string/activite_quuiz" android:icon="@drawable/baseline_android_24" android:onClick="openMenuItem1" android:enabled="true"/>
-    <item android:id="@+id/action_menu_item2" android:title="@string/showVuzixToast" android:icon="@drawable/baseline_info_24" android:onClick="openMenuItem2" tools:ignore="MenuTitle" />
-    <item android:id="@+id/action_menu_item3" android:title="@string/showBladeToast" android:icon="@drawable/baseline_copyright_24" android:onClick="openMenuItem2"/>
+    <item android:id="@+id/action_menu_item2" android:title="@string/activite_2" android:icon="@drawable/baseline_info_24" android:onClick="openMenuItem2" tools:ignore="MenuTitle" />
+    <item android:id="@+id/action_menu_item3" android:title="@string/activite_3" android:icon="@drawable/baseline_copyright_24" android:onClick="openMenuItem3"/>
 
 </menu>

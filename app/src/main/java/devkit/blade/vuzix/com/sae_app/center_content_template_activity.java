@@ -100,4 +100,9 @@ public class center_content_template_activity extends ActionMenuActivity {
         startActivity(new Intent(this, QuizActivity.class));
     }
 
+    public void openMenuItem3(MenuItem item)
+    {
+        startActivity(new Intent(this, QuizActivity.class));
+    }
+
 }
