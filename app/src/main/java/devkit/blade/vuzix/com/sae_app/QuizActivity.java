@@ -30,7 +30,7 @@ public class QuizActivity extends ActionMenuActivity {
     private int currentQuestion = 0;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
 
@@ -75,9 +75,14 @@ public class QuizActivity extends ActionMenuActivity {
     }
 
     @Override
-    protected boolean onCreateActionMenu(android.view.Menu menu) {
+    protected boolean onCreateActionMenu(Menu menu) {
+        super.onCreateActionMenu(menu);
 
-        if (!quizLoaded) return false;
+        // Si le quiz n'est pas encore chargé, on s'assure que le menu est vide mais on retourne true
+        if (!quizLoaded) {
+            menu.clear();
+            return true;
+        }
 
         menu.clear();
 
@@ -112,8 +117,9 @@ public class QuizActivity extends ActionMenuActivity {
         return true;
     }
 
+
     @Override
     protected boolean alwaysShowActionMenu() {
-        return quizLoaded;
+        return true;
     }
 }

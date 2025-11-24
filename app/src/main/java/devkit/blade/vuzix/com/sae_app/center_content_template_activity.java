@@ -22,13 +22,9 @@ import com.vuzix.hud.actionmenu.DefaultActionMenuItemView;
  */
 public class center_content_template_activity extends ActionMenuActivity {
 
-    private boolean statusState = true;
-    private int statusCount = 1;
-
-    private MenuItem HelloMenuItem;
-    private MenuItem VuzixMenuItem;
-    private MenuItem BladeMenuItem;
-    private SwitchMenuItemView switchMenuItemView;
+    private MenuItem MenuItem1;
+    private MenuItem MenuItem2;
+    private MenuItem MenuItem3;
     private TextView mainText;
 
     @Override
@@ -51,10 +47,9 @@ public class center_content_template_activity extends ActionMenuActivity {
         super.onCreateActionMenu(menu);
         getMenuInflater().inflate(R.menu.main_menu, menu);
 
-        HelloMenuItem = menu.findItem(R.id.action_menu_hello);
-        VuzixMenuItem = menu.findItem(R.id.action_menu_vuzix);
-        BladeMenuItem = menu.findItem(R.id.action_menu_blade);
-        BladeMenuItem.setActionView(switchMenuItemView = new SwitchMenuItemView(this));
+        MenuItem1 = menu.findItem(R.id.action_menu_item1);
+        MenuItem2 = menu.findItem(R.id.action_menu_item2);
+        MenuItem3 = menu.findItem(R.id.action_menu_item3);
         updateMenuItems();
 
         return true;
@@ -82,85 +77,27 @@ public class center_content_template_activity extends ActionMenuActivity {
     }
 
     private void updateMenuItems() {
-        if (HelloMenuItem == null) {
+        if (MenuItem1 == null) {
             return;
         }
 
-        VuzixMenuItem.setEnabled(false);
-        BladeMenuItem.setEnabled(false);
-        switchMenuItemView.setSwitchState(statusState, statusCount);
+        MenuItem1.setEnabled(true);
+        MenuItem2.setEnabled(true);
+        MenuItem3.setEnabled(false);
     }
 
 
     //Action Menu Click events
     //This events where register via the XML for the menu definitions.
-    public void showHello(MenuItem item){
 
-        showToast(getString(R.string.Hello));
-        mainText.setText(getString(R.string.Hello));
-        VuzixMenuItem.setEnabled(true);
-        BladeMenuItem.setEnabled(true);
-    }
-
-    public void showVuzix(MenuItem item){
-        showToast(getString(R.string.Vuzix));
-        mainText.setText(getString(R.string.Vuzix));
-    }
-
-    public void showBlade(MenuItem item){
-        showToast(getString(R.string.Blade1));
-        statusState = !statusState;
-        statusCount++;
-        switchMenuItemView.setSwitchState(statusState, statusCount);
-        mainText.setText(getString(R.string.Blade,statusCount));
-    }
-
-    public void showbottomlock(MenuItem item)
+    public void openMenuItem1(MenuItem item)
     {
-        startActivity(new Intent(this, around_content_template_activity.class));
+        startActivity(new Intent(this, QuizActivity.class));
     }
 
-    public void showpopUp(MenuItem item)
+    public void openMenuItem2(MenuItem item)
     {
-        startActivity(new Intent(this, center_content_pop_up_menu_template_activity.class));
-    }
-
-    private void showToast(final String text){
-
-        final Activity activity = this;
-
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    /**
-     * Custom Class to allow the view to change on the dynamicly.
-     * Notice that we utilize this class on the actual MenuItem for its ActionView class.
-     * This will allow us to access internal fields like icon to modify the action view itself.
-     * For more information see the Class definition for DefaultActionMenuItemView and for
-     * onCreateActionMenu.
-     */
-    private static class SwitchMenuItemView extends DefaultActionMenuItemView {
-
-        public SwitchMenuItemView(Context context) {
-            super(context);
-        }
-
-        private void setSwitchState(boolean on, int times) {
-            if (on) {
-                icon.setImageTintList(getResources().getColorStateList(com.vuzix.hud.actionmenu.R.color.action_menu_item_text_color));
-                setIcon(getResources().getDrawable(R.drawable.baseline_perm_device_information_24, getContext().getTheme()));
-                setTitle(getResources().getString(R.string.Blade,times));
-            } else {
-                icon.setImageTintList(getResources().getColorStateList(com.vuzix.hud.actionmenu.R.color.hud_blue));
-                setIcon(getResources().getDrawable(R.drawable.baseline_copyright_24,getContext().getTheme()));
-                setTitle(getResources().getString(R.string.Blade,times));
-            }
-        }
+        startActivity(new Intent(this, QuizActivity.class));
     }
 
 }

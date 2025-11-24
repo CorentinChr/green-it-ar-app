@@ -28,4 +28,6 @@
     <string name="only_on_mseries">Fonction disponible uniquement sur Vuzix M-Series</string>
     <string name="no_data">Aucune donnée</string>
     <string name="scan">Scanner qr code\n</string>
+    <string name="activite_quuiz">Activité de Quiz</string>
+    <string name="main_menu_text">Menu principal de l\'application. Choisissez une activité parmis celles proposées.</string>
 </resources>
