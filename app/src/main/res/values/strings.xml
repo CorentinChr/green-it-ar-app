@@ -25,4 +25,7 @@
         To Hide the Action Menu do a two finger tap(back gesture)</string>
     <string name="AroundContentInfo">Around Content style means that the View or real estate available is AROUND the center of the screen.</string>
     <string name="AroundContentInfo2">The Action menu moves in the CENTER of the main UI area.</string>
+    <string name="only_on_mseries">Fonction disponible uniquement sur Vuzix M-Series</string>
+    <string name="no_data">Aucune donnée</string>
+    <string name="scan">Scanner qr code\n</string>
 </resources>

@@ -1,6 +1,5 @@
 package devkit.blade.vuzix.com.sae_app;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -8,148 +7,105 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+
+import devkit.blade.vuzix.com.sae_app.model.QuizItem;
+import devkit.blade.vuzix.com.sae_app.retrofit.QuizApi;
+import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class QuizActivity extends ActionMenuActivity {
 
     private TextView questionText;
+    private boolean quizLoaded = false;
 
-    private ArrayList<String> questions = new ArrayList<>();
-    private ArrayList<ArrayList<String>> answers = new ArrayList<>();
-    private ArrayList<Integer> correct = new ArrayList<>();
-
+    private List<QuizItem> quiz;
     private int currentQuestion = 0;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
 
         questionText = findViewById(R.id.quiz_question);
 
-        new LoadQuizTask().execute("http://10.0.2.2:8080/quiz");
-        // ↑ mets ton IP ici
+        loadQuiz();
     }
 
-    // ------------------------------
-    // 1) Charger le JSON en tâche secondaire
-    // ------------------------------
-    private class LoadQuizTask extends AsyncTask<String, Void, Boolean> {
+    private void loadQuiz() {
 
-        @Override
-        protected Boolean doInBackground(String... urls) {
-            try {
-                URL url = new URL(urls[0]);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
+        QuizApi api = RetrofitClient.getInstance().create(QuizApi.class);
 
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream())
-                );
+        api.getQuiz().enqueue(new Callback<List<QuizItem>>() {
+            @Override
+            public void onResponse(Call<List<QuizItem>> call, Response<List<QuizItem>> response) {
 
-                StringBuilder sb = new StringBuilder();
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
+                if (!response.isSuccessful() || response.body() == null) {
+                    Toast.makeText(QuizActivity.this, "Erreur API", Toast.LENGTH_LONG).show();
+                    finish();
+                    return;
                 }
 
-                reader.close();
+                quiz = response.body();
+                quizLoaded = true;
 
-                parseJson(sb.toString());
-                return true;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.e("QUIZ", "Erreur chargement", e);  // <-- AJOUT SUPER IMPORTANT
-                return false;
+                setQuestion();
+                invalidateActionMenu();
             }
 
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            if (!success) {
-                Toast.makeText(QuizActivity.this, "Erreur lors du chargement du quiz", Toast.LENGTH_LONG).show();
+            @Override
+            public void onFailure(Call<List<QuizItem>> call, Throwable t) {
+                Log.e("QUIZ", "Erreur réseau", t);
+                Toast.makeText(QuizActivity.this, t.toString(), Toast.LENGTH_LONG).show();
                 finish();
-                return;
             }
 
-            setQuestion();
-        }
+        });
     }
 
-    // ------------------------------
-    // 2) Parser le JSON manuellement
-    // ------------------------------
-    private void parseJson(String json) throws Exception {
-        JSONArray array = new JSONArray(json);
-
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.getJSONObject(i);
-
-            questions.add(obj.getString("question"));
-
-            JSONArray ansArray = obj.getJSONArray("answers");
-            ArrayList<String> ansList = new ArrayList<>();
-
-            for (int j = 0; j < ansArray.length(); j++) {
-                ansList.add(ansArray.getString(j));
-            }
-
-            answers.add(ansList);
-            correct.add(obj.getInt("correctIndex"));
-        }
-    }
-
-    // ------------------------------
-    // 3) Définir la question actuelle
-    // ------------------------------
     private void setQuestion() {
-        questionText.setText(questions.get(currentQuestion));
-        invalidateActionMenu(); // recharge le menu
+        questionText.setText(quiz.get(currentQuestion).question);
     }
 
-    // ------------------------------
-    // 4) Construire le menu Vuzix
-    // ------------------------------
     @Override
-    protected boolean onCreateActionMenu(Menu menu) {
+    protected boolean onCreateActionMenu(android.view.Menu menu) {
 
-        ArrayList<String> ansList = answers.get(currentQuestion);
+        if (!quizLoaded) return false;
 
-        for (int i = 0; i < ansList.size(); i++) {
-            final int index = i;
+        menu.clear();
 
-            menu.add(Menu.NONE, i, Menu.NONE, ansList.get(i))
-                    .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                        @Override
-                        public boolean onMenuItemClick(MenuItem item) {
+        List<String> answers = quiz.get(currentQuestion).answers;
 
-                            if (index == correct.get(currentQuestion)) {
-                                currentQuestion++;
+        for (int i = 0; i < answers.size(); i++) {
 
-                                if (currentQuestion < questions.size()) {
-                                    setQuestion();
-                                } else {
-                                    Toast.makeText(QuizActivity.this, "Quiz terminé !", Toast.LENGTH_LONG).show();
-                                    finish();
-                                }
+            final int answerIndex = i;
+
+            menu.add(0, i, 0, answers.get(i))
+                    .setOnMenuItemClickListener(item -> {
+
+                        if (answerIndex == quiz.get(currentQuestion).correctIndex) {
+                            currentQuestion++;
+
+                            if (currentQuestion < quiz.size()) {
+                                setQuestion();
+                                invalidateActionMenu();
                             } else {
-                                Toast.makeText(QuizActivity.this, "Mauvaise réponse !", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(QuizActivity.this, "Quiz terminé !", Toast.LENGTH_LONG).show();
+                                finish();
                             }
 
-                            return true;
+                        } else {
+                            Toast.makeText(QuizActivity.this, "Mauvaise réponse", Toast.LENGTH_SHORT).show();
                         }
+
+                        return true;
                     });
         }
 
@@ -158,6 +114,6 @@ public class QuizActivity extends ActionMenuActivity {
 
     @Override
     protected boolean alwaysShowActionMenu() {
-        return true;
+        return quizLoaded;
     }
 }

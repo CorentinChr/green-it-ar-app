@@ -5,19 +5,23 @@
 
     <!-- Notice we modified the android:theme to use Vuzix  HudTheme -->
     <!--Here we register our own DynamicThemeApplication to handle theme changing.-->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
-        android:name="devkit.blade.vuzix.com.sae_app.BladeSampleApplication"
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
         android:icon="@drawable/baseline_android_24"
         android:label="@string/app_name"
         android:roundIcon="@drawable/baseline_android_24"
         android:supportsRtl="true"
-        android:theme="@style/HudTheme">
+        android:theme="@style/HudTheme"
+        android:name=".BladeSampleApplication">
         <meta-data
             android:name="com.vuzix.icon.tint" android:value="true" />
-        <activity android:name="devkit.blade.vuzix.com.sae_app.center_content_template_activity"
-                  android:exported="true">
+        <activity
+            android:exported="true"
+            android:name=".center_content_template_activity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -32,16 +36,17 @@
                 android:name="com.vuzix.icon.tint" android:value="true" />
 
         </activity>
-        <activity android:name="devkit.blade.vuzix.com.sae_app.around_content_template_activity">
+        <activity android:name=".around_content_template_activity">
         </activity>
 
-        <activity android:name="devkit.blade.vuzix.com.sae_app.center_content_pop_up_menu_template_activity">
+        <activity android:name=".center_content_pop_up_menu_template_activity">
         </activity>
 
-        <activity android:name="devkit.blade.vuzix.com.sae_app.QuizActivity" />
+        <activity android:name=".QuizActivity" />
 
-        <receiver android:name="devkit.blade.vuzix.com.sae_app.Template_Widget"
-                  android:exported="true">
+        <receiver
+            android:exported="true"
+            android:name=".Template_Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -57,8 +62,8 @@
 
 
         <receiver
-            android:name="devkit.blade.vuzix.com.sae_app.Template_Widget_Update_Receiver"
-            android:exported="true">
+            android:exported="true"
+            android:name=".Template_Widget_Update_Receiver">
             <intent-filter>
                 <action android:name="com.vuzix.intent.action.UI_DISPLAY_MODE" />
             </intent-filter>
