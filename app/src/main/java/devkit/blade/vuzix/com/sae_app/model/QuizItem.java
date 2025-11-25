@@ -7,4 +7,8 @@ public class QuizItem {
     public String question;
     public List<String> answers;
     public int correctIndex;
+
+    // Nouvelle propriété : information affichée lorsqu'on répond correctement
+    // Exemple : "Bonne réponse ! Le saviez-vous : ..."
+    public String infos;
 }
