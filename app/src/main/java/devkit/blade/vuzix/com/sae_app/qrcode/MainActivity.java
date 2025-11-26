@@ -1,0 +1,308 @@
+/***************************************************************************************
+Copyright (c) 2018, Vuzix Corporation
+        All rights reserved.
+
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+
+        *  Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+        *  Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+        *  Neither the name of Vuzix Corporation nor the names of
+        its contributors may be used to endorse or promote products derived
+        from this software without specific prior written permission.
+
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+        THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+        PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+        CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+        EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+        PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+        OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+        WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+        OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+        EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**************************************************************************************/
+
+package devkit.blade.vuzix.com.sae_app.qrcode;
+
+import android.app.Activity;
+import android.app.Fragment;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.AssetFileDescriptor;
+import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
+
+import com.vuzix.sdk.barcode.BarcodeType2;
+import com.vuzix.sdk.barcode.ScanResult2;
+import com.vuzix.sdk.barcode.ScannerFragment;
+
+
+import java.io.IOException;
+
+import devkit.blade.vuzix.com.sae_app.R;
+
+/**
+ * The main activity for the Vuzix M-Series barcode sample application
+ */
+public class MainActivity extends Activity implements PermissionsFragment.Listener {
+
+    private static final String TAG_PERMISSIONS_FRAGMENT = "permissions";
+
+    // Limiting the barcode formats to those you expect to encounter improves the speed of scanning
+    // and increases the likelihood of properly detecting a barcode.
+    private final String[] barcodeTypes = {
+            BarcodeType2.QR_CODE.name(),
+            BarcodeType2.CODE_128.name()
+    };
+
+    private View scanInstructionsView;
+    private ScannerFragment.Listener2 mScannerListener;
+
+    /**
+     * Helper public pour démarrer l'activité scanner depuis d'autres activities.
+     * Utilise FLAG_ACTIVITY_REORDER_TO_FRONT pour ramener une instance existante à l'avant.
+     */
+    public static void startScanner(Context context) {
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        context.startActivity(intent);
+    }
+
+    /**
+     * One-time initialization. Sets up the view and the permissions.
+     * @param savedInstanceState - we have no saved state. Just pass through to superclass
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // This is a best practice on the  M-Series. Once the activity is started, the user will likely
+        // look straight down to scan a barcode. Allow left and right eye operation, but lock it
+        // in once started
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+
+        // Since the Vuzix M400 API is level 23, always use runtime permissions
+        PermissionsFragment permissionsFragment = (PermissionsFragment)getFragmentManager().findFragmentByTag(TAG_PERMISSIONS_FRAGMENT);
+        if (permissionsFragment == null) {
+            permissionsFragment = new PermissionsFragment();
+            getFragmentManager().beginTransaction().add(permissionsFragment, TAG_PERMISSIONS_FRAGMENT).commit();
+        }
+        // Register as a PermissionsFragment.Listener so our permissionsGranted() is called
+        permissionsFragment.setListener(this);
+
+        scanInstructionsView = findViewById(R.id.scan_instructions);
+
+        createScannerListener();
+
+        Fragment scannerFragment = getFragmentManager().findFragmentById(R.id.fragment_container);
+        if (scannerFragment instanceof ScannerFragment) {
+            // hook new listener instance up to existing scanner fragment
+            ((ScannerFragment) scannerFragment).setListener2(mScannerListener);
+            scanInstructionsView.setVisibility(View.VISIBLE);
+        } else {
+            // Hide the instructions until we have permission granted
+            scanInstructionsView.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Called upon permissions being granted. This is the only way we show the scanner with API 23
+     */
+    @Override
+    public void permissionsGranted() {
+        showScanner();
+    }
+
+    private Bundle setScannerArgs() {
+        Bundle args = new Bundle();
+        args.putStringArray(ScannerFragment.ARG_BARCODE2_TYPES, barcodeTypes);
+        args.putBoolean(ScannerFragment.ARG_ZOOM_IN_MODE, true);
+        return args;
+    }
+
+    /**
+     * Shows the scanner fragment in our activity
+     */
+    private void showScanner() {
+        ScannerFragment scannerFragment = new ScannerFragment();
+        scannerFragment.setArguments(setScannerArgs());
+        getFragmentManager().beginTransaction().replace(R.id.fragment_container, scannerFragment).commit();
+        scannerFragment.setListener2(mScannerListener);                 // Required to get scan results
+        scanInstructionsView.setVisibility(View.VISIBLE);  // Put the instructions back on the screen
+    }
+
+    private void createScannerListener() {
+        try {
+            mScannerListener = new ScannerFragment.Listener2() {
+                @Override
+                public void onScan2Result(Bitmap bitmap, ScanResult2[] results) {
+                    onScanFragmentScanResult(bitmap,results);
+                }
+
+                @Override
+                public void onError() {
+                    onScanFragmentError();
+                }
+            };
+        } catch (NoClassDefFoundError e) {
+            // We get this exception if the SDK stubs against which we compiled cannot be resolved
+            // at runtime. This occurs if the code is not being run on an M400 supporting the voice
+            // SDK
+            Toast.makeText(this, R.string.only_on_mseries, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    /**
+     * This callback gives us the scan result.  This is relayed through mScannerListener.onScanResult
+     *
+     * This sample calls a helper class to display the result to the screen
+     *
+     * @param bitmap -  the bitmap in which barcodes were found
+     * @param results -  an array of ScanResult
+     */
+
+    // java
+    private void onScanFragmentScanResult(Bitmap bitmap, ScanResult2[] results) {
+        ScannerFragment scannerFragment = (ScannerFragment)getFragmentManager().findFragmentById(R.id.fragment_container);
+        if (scannerFragment != null) {
+            scannerFragment.setListener2(null);
+        }
+
+        String scannedUrl = null;
+        if (results != null && results.length > 0 && results[0] != null) {
+            try {
+                java.lang.reflect.Method m = results[0].getClass().getMethod("getText");
+                Object value = m.invoke(results[0]);
+                if (value != null) scannedUrl = value.toString();
+            } catch (Exception e) {
+                scannedUrl = results[0].toString();
+            }
+        }
+
+        Log.d("MainActivity", "scannedUrl=" + scannedUrl);
+
+        if (scannedUrl != null && (scannedUrl.startsWith("http://") || scannedUrl.startsWith("https://"))) {
+            try {
+                Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
+                intent.putExtra("url", scannedUrl);
+                startActivity(intent);
+            } catch (android.content.ActivityNotFoundException e) {
+                Log.e("MainActivity", "WebViewActivity introuvable", e);
+                Toast.makeText(this, "Impossible d'ouvrir la page (activité introuvable)", Toast.LENGTH_LONG).show();
+                if (results != null && results.length > 0) {
+                    showScanResult(bitmap, results[0]);
+                } else {
+                    showScanResult(bitmap, null);
+                }
+            } catch (Exception e) {
+                Log.e("MainActivity", "Erreur lors du lancement de WebViewActivity", e);
+                Toast.makeText(this, "Erreur: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+                if (results != null && results.length > 0) {
+                    showScanResult(bitmap, results[0]);
+                } else {
+                    showScanResult(bitmap, null);
+                }
+            }
+        } else {
+            if (results != null && results.length > 0) {
+                showScanResult(bitmap, results[0]);
+            } else {
+                showScanResult(bitmap, null);
+            }
+        }
+    }
+
+
+
+    /**
+     * This callback gives us scan errors. This is relayed through mScannerListener.onError
+     *
+     * At a minimum the scanner fragment must be removed from the activity. This sample closes
+     * the entire activity, since it has no other functionality
+     */
+    private void onScanFragmentError() {
+        Log.e("MainActivity", "onScanFragmentError() appelé — le scanner a signalisé une erreur");
+        Toast.makeText(this, R.string.scanner_error_message, Toast.LENGTH_LONG).show();
+
+        // Tentative de revenir au scanner (ne pas finish() pour pouvoir lire le log)
+        try {
+            showScanner();
+        } catch (Exception e) {
+            Log.e("MainActivity", "Échec du repositionnement du scanner", e);
+            // Ne pas fermer l'app : laisser l'utilisateur ou l'UI afficher une erreur
+            scanInstructionsView.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    /**
+     * Helper method to show a scan result
+     *
+     * @param bitmap -  the bitmap in which barcodes were found
+     * @param result -  an array of ScanResult
+     */
+    private void showScanResult(Bitmap bitmap, ScanResult2 result) {
+        scanInstructionsView.setVisibility(View.GONE);
+        ScanResultFragment scanResultFragment = new ScanResultFragment();
+        Bundle args = new Bundle();
+        args.putParcelable(ScanResultFragment.ARG_BITMAP, bitmap);
+        args.putParcelable(ScanResultFragment.ARG_SCAN_RESULT, result);
+        scanResultFragment.setArguments(args);
+        getFragmentManager().beginTransaction().replace(R.id.fragment_container, scanResultFragment).commit();
+        beep();
+    }
+
+    /**
+     * A best practice is to give some audible feedback during scan operations. This beeps.
+     */
+    private void beep() {
+        MediaPlayer player = new MediaPlayer();
+        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        player.setOnCompletionListener(MediaPlayer::release);
+        try {
+            AssetFileDescriptor file = getResources().openRawResourceFd(R.raw.beep);
+            player.setDataSource(file.getFileDescriptor(), file.getStartOffset(), file.getLength());
+            file.close();
+            player.setVolume(.1f, .1f);
+            player.prepare();
+            player.start();
+        } catch (IOException e) {
+            player.release();
+        }
+    }
+
+    /**
+     * Basic control to return from the result fragment to the scanner fragment, or exit the app from the scanner
+     */
+    @Override
+    public void onBackPressed() {
+        if (isScanResultShowing()) {
+            showScanner();
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    /**
+     * Utility to determine if the scanner result fragment is showing
+     * @return True if showing
+     */
+    private boolean isScanResultShowing() {
+        return getFragmentManager().findFragmentById(R.id.fragment_container) instanceof ScanResultFragment;
+    }
+}

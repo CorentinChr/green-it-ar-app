@@ -23,6 +23,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
+    implementation 'com.vuzix:sdk-barcode:master-SNAPSHOT'
+
 
     // Dependencies for our VUZIX HUD Resources and ActionMenu Libraries.
     implementation 'com.vuzix:hud-actionmenu:2.9.1'

@@ -32,4 +32,9 @@
     <string name="main_menu_text">Menu principal de l\'application. Choisissez une activité parmis celles proposées.</string>
     <string name="activite_2">Activite 2</string>
     <string name="activite_3">Activite 3</string>
+    <string name="main_activity_name">Barcode</string>
+    <string name="grant_camera_permission">To use the barcode scanner, please grant camera permissions and try again.</string>
+    <string name="scanner_error_message">Unable to open scanner!</string>
+    <string name="scan_instructions">Place a barcode inside the viewfinder rectangle to scan it.</string>
+    <string name="activite_4">Activité 4\n</string>
 </resources>

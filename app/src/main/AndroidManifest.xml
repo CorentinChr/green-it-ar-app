@@ -7,6 +7,8 @@
     <!--Here we register our own DynamicThemeApplication to handle theme changing.-->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
 
     <application
         android:allowBackup="true"
@@ -38,6 +40,10 @@
         </activity>
 
         <activity android:name=".QuizActivity" />
+        <activity android:name=".qrcode.MainActivity" />
+        <activity android:name=".qrcode.WebViewActivity" />
+        <activity android:name=".QuizHabitudeActivity" />
+        <activity android:name=".FicheInfoActivity" />
 
         <receiver
             android:exported="true"

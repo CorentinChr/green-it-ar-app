@@ -1,16 +1,14 @@
 package devkit.blade.vuzix.com.sae_app;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
-import com.vuzix.hud.actionmenu.DefaultActionMenuItemView;
+
+import devkit.blade.vuzix.com.sae_app.qrcode.MainActivity;
 
 
 /**
@@ -25,6 +23,7 @@ public class center_content_template_activity extends ActionMenuActivity {
     private MenuItem MenuItem1;
     private MenuItem MenuItem2;
     private MenuItem MenuItem3;
+    private MenuItem MenuItem4;
     private TextView mainText;
 
     @Override
@@ -50,6 +49,7 @@ public class center_content_template_activity extends ActionMenuActivity {
         MenuItem1 = menu.findItem(R.id.action_menu_item1);
         MenuItem2 = menu.findItem(R.id.action_menu_item2);
         MenuItem3 = menu.findItem(R.id.action_menu_item3);
+        MenuItem4 = menu.findItem(R.id.action_menu_item4);
         updateMenuItems();
 
         return true;
@@ -83,7 +83,8 @@ public class center_content_template_activity extends ActionMenuActivity {
 
         MenuItem1.setEnabled(true);
         MenuItem2.setEnabled(true);
-        MenuItem3.setEnabled(false);
+        MenuItem3.setEnabled(true);
+        MenuItem4.setEnabled(true);
     }
 
 
@@ -97,12 +98,17 @@ public class center_content_template_activity extends ActionMenuActivity {
 
     public void openMenuItem2(MenuItem item)
     {
-        startActivity(new Intent(this, QuizActivity.class));
+        startActivity(new Intent(this, MainActivity.class));
     }
 
     public void openMenuItem3(MenuItem item)
     {
-        startActivity(new Intent(this, QuizActivity.class));
+        startActivity(new Intent(this, QuizHabitudeActivity.class));
+    }
+
+    public void openMenuItem4(MenuItem item)
+    {
+        startActivity(new Intent(this, FicheInfoActivity.class));
     }
 
 }
