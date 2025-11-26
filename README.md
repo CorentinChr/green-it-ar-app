@@ -2,7 +2,7 @@
 
 ## 📋 Description du Projet
 
-Ce projet est une application Android développée dans le cadre de la **SAE 05** (Situation d'Apprentissage et d'Évaluation). L'application est conçue pour fonctionner sur les lunettes connectées **Vuzix Blade 2** et propose des fonctionnalités interactives de sensibilisation environnementale.
+Ce projet est une application Android développée dans le cadre de la **SAE 05**. L'application est conçue pour fonctionner sur les lunettes connectées **Vuzix Blade 2** et propose des fonctionnalités interactives de sensibilisation environnementale.
 
 L'application utilise le système d'ActionMenu de Vuzix pour une navigation intuitive adaptée aux lunettes connectées.
 
