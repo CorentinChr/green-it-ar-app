@@ -2,7 +2,6 @@ package devkit.blade.vuzix.com.sae_app.model;
 
 /**
  * Modèle représentant une fiche d'information récupérée depuis le backend.
- * Hypothèse : le backend renvoie des objets JSON avec les propriétés `titre` et `texte`.
  */
 public class FicheInfoItem {
     // Titre de la fiche

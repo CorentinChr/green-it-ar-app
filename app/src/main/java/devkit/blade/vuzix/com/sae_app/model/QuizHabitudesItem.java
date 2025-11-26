@@ -1,5 +1,8 @@
 package devkit.blade.vuzix.com.sae_app.model;
 
+/**
+ * Modèle représentant une question de quiz sur les habitudes numériques récupérée depuis le backend.
+ */
 public class QuizHabitudesItem {
     public int id;
     public String question;

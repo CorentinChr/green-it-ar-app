@@ -20,19 +20,26 @@ import retrofit2.Response;
 
 public class QuizHabitudeActivity extends ActionMenuActivity {
 
+    // Vues
     private TextView questionText;
     private TextView scoreText;
 
+    // Liste des questions chargées depuis l'API
     private List<QuizHabitudesItem> questions;
+
+    // Index et score courant
     private int currentIndex = 0;
     private int cumulativeScore = 0;
+
     // Indique si la question a été répondue et si on affiche l'écran d'info
     private boolean showingInfo = false;
 
-    // Nouveaux champs pour gestion réseau
+    // États liés au chargement réseau
     private boolean loading = false;
     private boolean loadError = false;
     private String errorMessage = null;
+
+    // Service Retrofit pour l'API quiz d'habitudes
     private QuizHabitudeApi apiService;
 
     @Override
@@ -40,22 +47,28 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz_habitude);
 
+        // Liaison des vues
         questionText = findViewById(R.id.qt_question);
         scoreText = findViewById(R.id.qt_score);
 
-        // Initialisation
+        // Initialisation des valeurs
         questions = new ArrayList<>();
         cumulativeScore = 0;
         scoreText.setText("Score: " + cumulativeScore);
         questionText.setText("Chargement...");
 
-        // Prépare le service Retrofit
+        // Prépare le client Retrofit et le service API
         apiService = RetrofitClient.getInstance().create(QuizHabitudeApi.class);
 
-        // Lance le chargement depuis le backend au lieu de données hardcodées
+        // Démarre le chargement asynchrone des questions
         loadQuestionsFromBackend();
     }
 
+    /**
+     * Lance l'appel Retrofit pour récupérer la liste des questions.
+     * Met à jour les flags `loading`, `loadError` et `errorMessage`.
+     * Met à jour l'UI uniquement si l'Activity n'est pas en train d'être détruite.
+     */
     private void loadQuestionsFromBackend() {
         loading = true;
         loadError = false;
@@ -65,12 +78,22 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         questionText.setText("Chargement...");
         invalidateActionMenu();
 
+        // Effectue un appel réseau asynchrone pour récupérer une liste de QuizHabitudesItem via l'API.
+        // Utilise Retrofit pour gérer la requête et la réponse.
+        // Le résultat est traité dans les callbacks `onResponse` et `onFailure`.
         Call<List<QuizHabitudesItem>> call = apiService.getQuizHabitude();
         call.enqueue(new Callback<List<QuizHabitudesItem>>() {
+
+            /**
+             * Callback appelé lorsque la réponse du serveur est reçue.
+             * @param call L'objet Retrofit représentant l'appel réseau.
+             * @param response La réponse reçue du serveur, contenant potentiellement les données.
+             */
             @Override
             public void onResponse(Call<List<QuizHabitudesItem>> call, Response<List<QuizHabitudesItem>> response) {
                 loading = false;
 
+                // Ne pas tenter de mettre à jour l'UI si l'activité est en destruction
                 if (!isFinishing() && !isDestroyed()) {
                     if (!response.isSuccessful() || response.body() == null) {
                         loadError = true;
@@ -91,6 +114,7 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
                         }
                     }
 
+                    // Force la reconstruction du menu d'action pour refléter l'état courant
                     invalidateActionMenu();
                 }
             }
@@ -110,6 +134,10 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         });
     }
 
+    /**
+     * Affiche la question courante et met à jour le score affiché.
+     * Si aucune question n'est disponible, affiche un message adapté.
+     */
     private void displayQuestion() {
         if (questions == null || questions.isEmpty() || currentIndex < 0 || currentIndex >= questions.size()) {
             questionText.setText("Aucune question disponible");
@@ -118,6 +146,7 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         }
 
         QuizHabitudesItem q = questions.get(currentIndex);
+        // Accès direct aux champs du modèle (vérifier null au besoin)
         questionText.setText(q.question);
         scoreText.setText("Score: " + cumulativeScore);
         showingInfo = false;
@@ -126,6 +155,10 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         invalidateActionMenu();
     }
 
+    /**
+     * Affiche l'information associée à la réponse sélectionnée.
+     * Si l'information est vide, affiche un texte générique.
+     */
     private void showInfo() {
         showingInfo = true;
         if (questions == null || questions.isEmpty() || currentIndex < 0 || currentIndex >= questions.size()) {
@@ -135,10 +168,18 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
         String info = questions.get(currentIndex).infos;
         if (info == null || info.trim().isEmpty()) info = "Réponse enregistrée";
         questionText.setText(info);
+
         // Met à jour le menu pour afficher l'item Continuer
         invalidateActionMenu();
     }
 
+    /**
+     * Construit dynamiquement le menu d'action en fonction de l'état :
+     * - chargement : item désactivé \"Chargement...\"
+     * - erreur : item \"Réessayer\"
+     * - affichage info : item \"Continuer\" pour passer à la question suivante
+     * - sinon : trois réponses actives (A/B/C) avec gestion du score
+     */
     @Override
     protected boolean onCreateActionMenu(Menu menu) {
         super.onCreateActionMenu(menu);

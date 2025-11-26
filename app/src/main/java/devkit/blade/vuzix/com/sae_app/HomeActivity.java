@@ -18,7 +18,7 @@ import devkit.blade.vuzix.com.sae_app.qrcode.MainActivity;
  * For more information on the ActionMenuActivity read the JavaDocs in Android Studio or download the
  * Java docs at:  https://www.vuzix.com/support/Downloads_Drivers
  */
-public class center_content_template_activity extends ActionMenuActivity {
+public class HomeActivity extends ActionMenuActivity {
 
     private MenuItem MenuItem1;
     private MenuItem MenuItem2;
@@ -29,7 +29,7 @@ public class center_content_template_activity extends ActionMenuActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_center_content_template_style);
+        setContentView(R.layout.home_activity);
 
         mainText = findViewById(R.id.main_text);
     }

@@ -2,6 +2,9 @@ package devkit.blade.vuzix.com.sae_app.model;
 
 import java.util.List;
 
+/**
+ * Modèle représentant une question du quiz récupérée depuis le backend.
+ */
 public class QuizItem {
     public int id;
     public String question;

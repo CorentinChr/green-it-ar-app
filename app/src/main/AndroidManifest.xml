@@ -23,7 +23,7 @@
             android:name="com.vuzix.icon.tint" android:value="true" />
         <activity
             android:exported="true"
-            android:name=".center_content_template_activity">
+            android:name=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

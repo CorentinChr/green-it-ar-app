@@ -21,7 +21,11 @@ import retrofit2.Response;
 
 /**
  * Activité affichant une fiche d'information récupérée depuis l'API.
- * Affiche le titre en haut et le texte occupant le reste de l'écran.
+ *
+ * Comportement principal :
+ * - Initialise les vues (titre / texte)
+ * - Charge la liste des fiches via Retrofit
+ * - Affiche la fiche courante et met à jour le menu d'action (bouton \"Suivant\")
  */
 public class FicheInfoActivity extends ActionMenuActivity {
 
@@ -31,9 +35,12 @@ public class FicheInfoActivity extends ActionMenuActivity {
     private List<FicheInfoItem> ficheList;
     // Index de la fiche actuellement affichée
     private int currentFicheIndex = 0;
-    // Indicateur que les fiches ont été chargées
+    // Indicateur que les fiches ont été chargées (permet d'afficher un état dans le menu)
     private boolean fichesLoaded = false;
 
+    /**
+     * Initialisation de l'activité : liaison vues et démarrage du chargement des fiches.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,10 +52,14 @@ public class FicheInfoActivity extends ActionMenuActivity {
         titreView.setText("Chargement...");
         texteView.setText("");
 
+        // Démarre la requête réseau asynchrone
         loadFiches();
     }
 
-    // Met à jour l'affichage pour la fiche courante
+    /**
+     * Met à jour l'affichage pour la fiche courante (`currentFicheIndex`).
+     * Gère les cas où la liste est vide ou non initialisée.
+     */
     private void setFiche() {
         if (ficheList == null || ficheList.isEmpty() || currentFicheIndex < 0 || currentFicheIndex >= ficheList.size()) {
             titreView.setText("Aucune fiche disponible");
@@ -56,11 +67,18 @@ public class FicheInfoActivity extends ActionMenuActivity {
             return;
         }
 
+        // Récupère l'élément courant et affiche ses champs (protection null)
         FicheInfoItem item = ficheList.get(currentFicheIndex);
         titreView.setText(item.getTitre() != null ? item.getTitre() : "");
         texteView.setText(item.getTexte() != null ? item.getTexte() : "");
     }
 
+    /**
+     * Construction du menu d'action spécifique à l'Activity Vuzix.
+     * - Si les fiches ne sont pas encore chargées : affiche un item désactivé "Chargement..."
+     * - Si la liste est vide : affiche "Aucune fiche"
+     * - Sinon : ajoute un bouton \"Suivant\" pour naviguer entre les fiches
+     */
     @Override
     protected boolean onCreateActionMenu(Menu menu) {
         super.onCreateActionMenu(menu);
@@ -77,14 +95,16 @@ public class FicheInfoActivity extends ActionMenuActivity {
             return true;
         }
 
-        // Bouton Suivant pour passer à la fiche suivante
+        // Bouton Suivant : incrémente l'index et met à jour l'affichage
         menu.add(0, 0, 0, "Suivant")
                 .setOnMenuItemClickListener(item -> {
                     if (currentFicheIndex < ficheList.size() - 1) {
                         currentFicheIndex++;
                         setFiche();
+                        // Force la reconstruction du menu si besoin (pour désactiver/activer items)
                         invalidateActionMenu();
                     } else {
+                        // Fin de la liste
                         Toast.makeText(FicheInfoActivity.this, "Plus de fiches", Toast.LENGTH_SHORT).show();
                     }
                     return true;
@@ -93,19 +113,30 @@ public class FicheInfoActivity extends ActionMenuActivity {
         return true;
     }
 
+    /**
+     * Indique que le menu d'action doit toujours être affiché sur le dispositif Vuzix.
+     */
     @Override
     protected boolean alwaysShowActionMenu() {
         return true;
     }
 
+    /**
+     * Lance la requête Retrofit pour récupérer la liste des fiches.
+     * Met à jour l'état local (`ficheList`, `fichesLoaded`, `currentFicheIndex`) à la réponse.
+     */
     private void loadFiches() {
+        // Récupération de l'API Retrofit
         FicheApi api = RetrofitClient.getInstance().create(FicheApi.class);
 
+        // Appel asynchrone
         api.getFiches().enqueue(new Callback<List<FicheInfoItem>>() {
             @Override
             public void onResponse(@NonNull Call<List<FicheInfoItem>> call, @NonNull Response<List<FicheInfoItem>> response) {
+                // Vérifie que la réponse est correcte et que le corps n'est pas null
                 if (!response.isSuccessful() || response.body() == null) {
                     Toast.makeText(FicheInfoActivity.this, "Erreur API fiches", Toast.LENGTH_LONG).show();
+                    // On termine l'activité si l'API est indisponible
                     finish();
                     return;
                 }
@@ -117,6 +148,7 @@ public class FicheInfoActivity extends ActionMenuActivity {
                 fichesLoaded = true;
                 currentFicheIndex = 0;
                 setFiche();
+                // Met à jour le menu d'action pour refléter l'état chargé
                 invalidateActionMenu();
 
                 if (fiches.isEmpty()) {
