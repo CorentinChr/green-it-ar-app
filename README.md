@@ -130,7 +130,13 @@ implementation 'androidx.appcompat:appcompat:1.7.0'
 
 ## 👥 Équipe
 
-Projet réalisé dans le cadre de la SAE 05.
+Projet réalisé dans le cadre de la SAE 05 par :
+
+DE-CLERCK Rafael
+CHARPIOT Corentin
+HENICHARD Théo
+BOUJU Maxime
+DELILLE Yannis
 
 ## 📄 Licence
 
