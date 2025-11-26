@@ -11,4 +11,12 @@ public class QuizItem {
     // Nouvelle propriété : information affichée lorsqu'on répond correctement
     // Exemple : "Bonne réponse ! Le saviez-vous : ..."
     public String infos;
+
+    // Thème de la question (doit correspondre au champ JSON renvoyé par l'API)
+    public String theme;
+
+    // Getter utile pour accéder au thème de manière sûre
+    public String getTheme() {
+        return theme;
+    }
 }

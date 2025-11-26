@@ -10,7 +10,7 @@ public class RetrofitClient {
     public static Retrofit getInstance() {
         if (instance == null) {
             instance = new Retrofit.Builder()
-                    .baseUrl("http://10.0.2.2:8080/")
+                    .baseUrl("https://backendsae-production.up.railway.app/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }

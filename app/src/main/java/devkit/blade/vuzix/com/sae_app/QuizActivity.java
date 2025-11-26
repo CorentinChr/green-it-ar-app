@@ -10,8 +10,11 @@ import androidx.annotation.NonNull;
 
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import devkit.blade.vuzix.com.sae_app.model.QuizItem;
 import devkit.blade.vuzix.com.sae_app.retrofit.QuizApi;
@@ -30,8 +33,17 @@ public class QuizActivity extends ActionMenuActivity {
     // Indique si les données du quiz ont été chargées depuis l'API
     private boolean quizLoaded = false;
 
-    // Liste des questions reçues depuis le backend
+    // Toutes les questions reçues depuis le backend (avant filtrage)
+    private List<QuizItem> allQuiz;
+
+    // Liste des questions filtrées selon le thème choisi
     private List<QuizItem> quiz;
+
+    // Liste des thèmes disponibles (extraites de allQuiz)
+    private List<String> themes;
+
+    // Mode courant : true = on attend que l'utilisateur choisisse un thème
+    private boolean choosingTheme = true;
 
     // Index de la question courante
     private int currentQuestion = 0;
@@ -47,13 +59,16 @@ public class QuizActivity extends ActionMenuActivity {
         // Récupération de la vue de la question dans le layout
         questionText = findViewById(R.id.quiz_question);
 
+        // Indicateur visuel initial
+        questionText.setText("Chargement des thèmes...");
+
         // Lance la requête réseau pour charger le quiz
         loadQuiz();
     }
 
     /**
      * Charge le quiz depuis le backend via Retrofit.
-     * - En cas de succès : stocke la liste, met à jour l'affichage et invalide le menu (recréé par onCreateActionMenu).
+     * - En cas de succès : stocke la liste, construit la liste des thèmes et invalide le menu.
      * - En cas d'échec : affiche un Toast et ferme l'activité.
      */
     private void loadQuiz() {
@@ -74,14 +89,39 @@ public class QuizActivity extends ActionMenuActivity {
                     return;
                 }
 
-                // On récupère la liste des questions
-                quiz = response.body();
-                Collections.shuffle(quiz);
-                currentQuestion = 0; // repartir de la première question du nouvel ordre
-                quizLoaded = true;
+                // On récupère la liste complète des questions
+                allQuiz = response.body();
 
-                // Affiche la première question
-                setQuestion();
+                // Extrait les thèmes distincts
+                Set<String> themeSet = new HashSet<>();
+                for (QuizItem item : allQuiz) {
+                    // Supposition : QuizItem a un champ public `theme` (String). Adapter si nécessaire.
+                    String t = null;
+                    try {
+                        t = item.getTheme();
+                    } catch (Exception ignored) {
+                        // Si le champ n'existe pas, on ignore et utilisera une valeur par défaut plus bas
+                    }
+
+                    if (t == null || t.trim().isEmpty()) {
+                        t = "Sans thème";
+                    }
+                    themeSet.add(t);
+                }
+
+                themes = new ArrayList<>(themeSet);
+                Collections.sort(themes);
+
+                // Indique que les données sont prêtes et qu'on doit afficher la sélection de thème
+                quizLoaded = true;
+                choosingTheme = true;
+
+                // Met à jour le texte central pour inviter à choisir un thème
+                if (themes.isEmpty()) {
+                    questionText.setText("Aucun thème disponible");
+                } else {
+                    questionText.setText("Choisissez un thème avec le pad");
+                }
 
                 // Demande la reconstruction du menu d'action : onCreateActionMenu sera appelé
                 invalidateActionMenu();
@@ -101,12 +141,20 @@ public class QuizActivity extends ActionMenuActivity {
     // Met à jour le TextView avec la question courante
     private void setQuestion() {
         showingInfo = false;
+        if (quiz == null || quiz.isEmpty() || currentQuestion < 0 || currentQuestion >= quiz.size()) {
+            questionText.setText("Aucune question disponible");
+            return;
+        }
         questionText.setText(quiz.get(currentQuestion).question);
     }
 
     // Affiche l'information liée à la question actuelle (après bonne réponse)
     private void showInfo() {
         showingInfo = true;
+        if (quiz == null || quiz.isEmpty() || currentQuestion < 0 || currentQuestion >= quiz.size()) {
+            questionText.setText("Bonne réponse !");
+            return;
+        }
         String info = quiz.get(currentQuestion).infos;
         if (info == null || info.trim().isEmpty()) {
             info = "Bonne réponse !"; // fallback
@@ -116,26 +164,68 @@ public class QuizActivity extends ActionMenuActivity {
 
     /**
      * Méthode appelée par le framework Vuzix pour (re)créer le menu ActionMenu.
-     * Ici nous construisons dynamiquement les items du menu à partir des réponses de la question courante.
-     * Chaque item utilise setOnMenuItemClickListener pour gérer la sélection via le trackpad.
-     *
-     * Comportement modifié :
-     * - Si `showingInfo` est vrai : afficher un seul item « Continuer »
-     *   qui, lorsqu'il est sélectionné, passe à la question suivante.
+     * Ici nous construisons dynamiquement les items soit pour la sélection de thème, soit
+     * pour les réponses de la question courante.
      */
     @Override
     protected boolean onCreateActionMenu(Menu menu) {
         super.onCreateActionMenu(menu);
 
-        // Si le quiz n'est pas encore chargé, on s'assure que le menu est vide mais on retourne true
+        // Nettoie les anciens items avant de recréer
+        menu.clear();
+
+        // Tant que les données ne sont pas chargées, affiche un item non cliquable pour forcer l'affichage
         if (!quizLoaded) {
-            menu.clear();
+            menu.add(0, 0, 0, "Chargement...").setEnabled(false);
             return true;
         }
 
-        // Nettoie les anciens items avant de recréer ceux de la question courante
-        menu.clear();
+        // Si nous sommes en train de choisir un thème, afficher la liste des thèmes
+        if (choosingTheme) {
+            if (themes == null || themes.isEmpty()) {
+                menu.add(0, 0, 0, "Aucun thème").setEnabled(false);
+                return true;
+            }
 
+            for (int i = 0; i < themes.size(); i++) {
+                final String theme = themes.get(i);
+                menu.add(0, i, 0, theme)
+                        .setOnMenuItemClickListener(item -> {
+                            // Filtre les questions selon le thème choisi
+                            quiz = new ArrayList<>();
+                            for (QuizItem it : allQuiz) {
+                                String t = null;
+                                try {
+                                    t = it.getTheme();
+                                } catch (Exception ignored) {
+                                }
+                                if (t == null || t.trim().isEmpty()) {
+                                    t = "Sans thème";
+                                }
+                                if (t.equals(theme)) {
+                                    quiz.add(it);
+                                }
+                            }
+
+                            if (quiz.isEmpty()) {
+                                Toast.makeText(QuizActivity.this, "Aucune question pour ce thème", Toast.LENGTH_SHORT).show();
+                                return true;
+                            }
+
+                            // Lance le quiz
+                            Collections.shuffle(quiz);
+                            currentQuestion = 0;
+                            choosingTheme = false;
+                            setQuestion();
+                            invalidateActionMenu();
+                            return true;
+                        });
+            }
+
+            return true;
+        }
+
+        // Si on affiche l'info après bonne réponse
         if (showingInfo) {
             // Affiche un seul item Continuer pendant que l'utilisateur lit l'info
             menu.add(0, 0, 0, "Continuer")
@@ -143,7 +233,7 @@ public class QuizActivity extends ActionMenuActivity {
                         // Passe à la question suivante
                         currentQuestion++;
 
-                        if (currentQuestion < quiz.size()) {
+                        if (quiz != null && currentQuestion < quiz.size()) {
                             setQuestion();
                             invalidateActionMenu();
                         } else {
@@ -158,6 +248,11 @@ public class QuizActivity extends ActionMenuActivity {
         }
 
         // Récupère la liste des réponses pour la question actuelle
+        if (quiz == null || quiz.isEmpty() || currentQuestion < 0 || currentQuestion >= quiz.size()) {
+            menu.add(0, 0, 0, "Aucune question").setEnabled(false);
+            return true;
+        }
+
         List<String> answers = quiz.get(currentQuestion).answers;
 
         for (int i = 0; i < answers.size(); i++) {
