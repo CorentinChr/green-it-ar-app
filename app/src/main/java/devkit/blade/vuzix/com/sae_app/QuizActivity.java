@@ -16,9 +16,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import android.content.SharedPreferences;
 import devkit.blade.vuzix.com.sae_app.model.QuizItem;
 import devkit.blade.vuzix.com.sae_app.retrofit.QuizApi;
 import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
+import devkit.blade.vuzix.com.sae_app.retrofit.UserApi;
+import devkit.blade.vuzix.com.sae_app.model.ScorePayload;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,6 +45,9 @@ public class QuizActivity extends ActionMenuActivity {
     // Liste des thèmes disponibles (extraites de allQuiz)
     private List<String> themes;
 
+    // Indique si les difficulties du quiz sont en base 0 (0/1/2) ou base 1 (1/2/3)
+    private boolean quizZeroBased = false;
+
     // Mode courant : true = on attend que l'utilisateur choisisse un thème
     private boolean choosingTheme = true;
 
@@ -50,6 +56,9 @@ public class QuizActivity extends ActionMenuActivity {
 
     // Indique si nous sommes en train d'afficher l'écran d'info après une bonne réponse
     private boolean showingInfo = false;
+
+    // Score cumulatif pour le quiz classique (1 point par bonne réponse)
+    private int cumulativeScore = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +100,22 @@ public class QuizActivity extends ActionMenuActivity {
 
                 // On récupère la liste complète des questions
                 allQuiz = response.body();
+
+                // Détecte si les difficultés sont en base 0 (si au moins une difficulté == 0)
+                quizZeroBased = false;
+                if (allQuiz != null) {
+                    for (QuizItem qi : allQuiz) {
+                        if (qi != null) {
+                            try {
+                                if (qi.difficulty == 0) {
+                                    quizZeroBased = true;
+                                    break;
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                }
 
                 // Extrait les thèmes distincts
                 Set<String> themeSet = new HashSet<>();
@@ -192,6 +217,9 @@ public class QuizActivity extends ActionMenuActivity {
                 menu.add(0, i, 0, theme)
                         .setOnMenuItemClickListener(item -> {
                             // Filtre les questions selon le thème choisi
+                            // Filtre par thème ET par niveau utilisateur
+                            int userLevel = getSharedPreferences("app_prefs", MODE_PRIVATE).getInt("user_level", 1);
+
                             quiz = new ArrayList<>();
                             for (QuizItem it : allQuiz) {
                                 String t = null;
@@ -203,7 +231,12 @@ public class QuizActivity extends ActionMenuActivity {
                                     t = "Sans thème";
                                 }
                                 if (t.equals(theme)) {
-                                    quiz.add(it);
+                                    // Vérifie la difficulté : si dataset zéro-based, on ajoute 1
+                                    int raw = it.difficulty;
+                                    int d = quizZeroBased ? (raw + 1) : raw;
+                                    if (d <= userLevel) {
+                                        quiz.add(it);
+                                    }
                                 }
                             }
 
@@ -237,7 +270,17 @@ public class QuizActivity extends ActionMenuActivity {
                             setQuestion();
                             invalidateActionMenu();
                         } else {
-                            Toast.makeText(QuizActivity.this, "Quiz terminé !", Toast.LENGTH_LONG).show();
+                            // Envoie le score final du quiz classique (ar_score_history)
+                            // Compute scaled score on 10
+                            int totalQ = (quiz == null) ? 0 : quiz.size();
+                            double scaled = 0.0;
+                            if (totalQ > 0) {
+                                scaled = ((double) cumulativeScore / (double) totalQ) * 10.0;
+                            }
+                            int scaledInt = (int) Math.ceil(scaled);
+                            sendScoreToBackend("ar_score_history", scaledInt);
+                            String s = String.format(java.util.Locale.getDefault(), "%d/10", scaledInt);
+                            Toast.makeText(QuizActivity.this, "Quiz terminé ! Score: " + s + " (" + cumulativeScore + "/" + totalQ + ")", Toast.LENGTH_LONG).show();
                             finish();
                         }
 
@@ -263,15 +306,21 @@ public class QuizActivity extends ActionMenuActivity {
             menu.add(0, i, 0, answers.get(i))
                     .setOnMenuItemClickListener(item -> {
 
-                        // Si l'index sélectionné correspond à la bonne réponse
+                            // Si l'index sélectionné correspond à la bonne réponse
                         if (answerIndex == quiz.get(currentQuestion).correctIndex) {
+                            // Incrémente le score cumulatif (1 point par bonne réponse)
+                            cumulativeScore++;
+                            Toast.makeText(QuizActivity.this, "Bonne réponse! +1 point", Toast.LENGTH_SHORT).show();
                             // Affiche l'information associée à la question et propose Continuer
                             showInfo();
                             invalidateActionMenu();
 
                         } else {
-                            // Mauvaise réponse -> petit feedback
+                            // Mauvaise réponse -> affiche l'info associée à la question, puis on proposera "Continuer"
                             Toast.makeText(QuizActivity.this, "Mauvaise réponse", Toast.LENGTH_SHORT).show();
+                            // Affiche l'information associée à la question (même en cas d'erreur)
+                            showInfo();
+                            invalidateActionMenu();
                         }
 
                         // Indique que l'événement a été consumé
@@ -286,5 +335,33 @@ public class QuizActivity extends ActionMenuActivity {
     @Override
     protected boolean alwaysShowActionMenu() {
         return true;
+    }
+
+    /**
+     * Envoie un score au backend en postant un objet JSON via l'API utilisateur.
+     * Ne bloque pas l'UI : la requête est asynchrone et les erreurs sont simplement loggées.
+     */
+    private void sendScoreToBackend(String listName, int score10) {
+        try {
+            UserApi userApi = RetrofitClient.getInstance().create(UserApi.class);
+            ScorePayload payload = new ScorePayload(listName, score10, System.currentTimeMillis());
+            userApi.postScore(payload).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (!response.isSuccessful()) {
+                        Log.w("QuizActivity", "Envoi du score non réussi, code=" + response.code());
+                    } else {
+                        Log.i("QuizActivity", "Score envoyé: " + listName + "=" + score10);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("QuizActivity", "Erreur envoi score", t);
+                }
+            });
+        } catch (Exception e) {
+            Log.e("QuizActivity", "Impossible d'envoyer le score", e);
+        }
     }
 }

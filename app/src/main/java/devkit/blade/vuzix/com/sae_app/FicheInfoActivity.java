@@ -13,6 +13,7 @@ import com.vuzix.hud.actionmenu.ActionMenuActivity;
 import java.util.List;
 
 import devkit.blade.vuzix.com.sae_app.model.FicheInfoItem;
+import android.content.SharedPreferences;
 import devkit.blade.vuzix.com.sae_app.retrofit.FicheApi;
 import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
 import retrofit2.Call;
@@ -143,8 +144,25 @@ public class FicheInfoActivity extends ActionMenuActivity {
 
                 List<FicheInfoItem> fiches = response.body();
 
+                // Filtre les fiches selon le niveau utilisateur stocké en SharedPreferences
+                SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                int userLevel = prefs.getInt("user_level", 1); // 1=beginner
+
+                // Conserve uniquement les fiches dont difficulty <= userLevel
+                java.util.ArrayList<FicheInfoItem> filtered = new java.util.ArrayList<>();
+                if (fiches != null) {
+                    for (FicheInfoItem f : fiches) {
+                        if (f != null) {
+                            int diff = f.difficulty;
+                            if (diff <= userLevel) {
+                                filtered.add(f);
+                            }
+                        }
+                    }
+                }
+
                 // Stocke la liste et initialise l'affichage
-                ficheList = fiches;
+                ficheList = filtered;
                 fichesLoaded = true;
                 currentFicheIndex = 0;
                 setFiche();

@@ -14,6 +14,8 @@ import java.util.List;
 import devkit.blade.vuzix.com.sae_app.model.QuizHabitudesItem;
 import devkit.blade.vuzix.com.sae_app.retrofit.QuizHabitudeApi;
 import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
+import devkit.blade.vuzix.com.sae_app.retrofit.UserApi;
+import devkit.blade.vuzix.com.sae_app.model.ScorePayload;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -218,7 +220,29 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
                 if (currentIndex < questions.size()) {
                     displayQuestion();
                 } else {
-                    Toast.makeText(QuizHabitudeActivity.this, "Quiz terminé! Score final: " + cumulativeScore, Toast.LENGTH_LONG).show();
+                    // Envoie le score final au backend (liste qh_score_history)
+                    // Calcul du nombre de points maximum possible (somme des meilleures réponses pour chaque question)
+                    int maxPoints = 0;
+                    if (questions != null) {
+                        for (QuizHabitudesItem qi : questions) {
+                            if (qi != null) {
+                                int m = Math.max(qi.scoreA, Math.max(qi.scoreB, qi.scoreC));
+                                maxPoints += m;
+                            }
+                        }
+                    }
+
+                    double scaled = 0.0;
+                    if (maxPoints > 0) {
+                        scaled = ((double) cumulativeScore / (double) maxPoints) * 10.0;
+                    }
+                    int scaledInt = (int) Math.ceil(scaled);
+                    String s = String.format(java.util.Locale.getDefault(), "%d/10", scaledInt);
+
+                    // Envoie du score converti (entier, arrondi vers le haut) au backend
+                    sendScoreToBackend("qh_score_history", scaledInt);
+
+                    Toast.makeText(QuizHabitudeActivity.this, "Quiz terminé! Score final: " + s + " (" + cumulativeScore + "/" + maxPoints + ")", Toast.LENGTH_LONG).show();
                     finish();
                 }
                 return true;
@@ -263,5 +287,33 @@ public class QuizHabitudeActivity extends ActionMenuActivity {
     @Override
     protected boolean alwaysShowActionMenu() {
         return true;
+    }
+
+    /**
+     * Envoie un score au backend en postant un objet JSON via l'API utilisateur.
+     * Ne bloque pas l'UI : la requête est asynchrone et les erreurs sont simplement loggées.
+     */
+    private void sendScoreToBackend(String listName, int score10) {
+        try {
+            UserApi userApi = RetrofitClient.getInstance().create(UserApi.class);
+            ScorePayload payload = new ScorePayload(listName, score10, System.currentTimeMillis());
+            userApi.postScore(payload).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (!response.isSuccessful()) {
+                        Log.w("QuizHabitude", "Envoi du score non réussi, code=" + response.code());
+                    } else {
+                        Log.i("QuizHabitude", "Score envoyé: " + listName + "=" + score10);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("QuizHabitude", "Erreur envoi score", t);
+                }
+            });
+        } catch (Exception e) {
+            Log.e("QuizHabitude", "Impossible d'envoyer le score", e);
+        }
     }
 }

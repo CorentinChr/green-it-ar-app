@@ -1,14 +1,22 @@
 package devkit.blade.vuzix.com.sae_app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
 
 import devkit.blade.vuzix.com.sae_app.qrcode.MainActivity;
+import devkit.blade.vuzix.com.sae_app.model.User;
+import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
+import devkit.blade.vuzix.com.sae_app.retrofit.UserApi;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 /**
@@ -32,6 +40,8 @@ public class HomeActivity extends ActionMenuActivity {
         setContentView(R.layout.home_activity);
 
         mainText = findViewById(R.id.main_text);
+        // Lance la récupération des informations utilisateur pour afficher le nom
+        fetchUser();
     }
 
     /**
@@ -109,6 +119,57 @@ public class HomeActivity extends ActionMenuActivity {
     public void openMenuItem4(MenuItem item)
     {
         startActivity(new Intent(this, FicheInfoActivity.class));
+    }
+
+    // Ouvre l'écran Profil (nouvelle activité)
+    public void openProfile(MenuItem item) {
+        startActivity(new Intent(this, ProfilActivity.class));
+    }
+
+    // Requête Retrofit pour récupérer l'utilisateur test et stocker son niveau
+    private void fetchUser() {
+        UserApi api = RetrofitClient.getInstance().create(UserApi.class);
+        api.getUser().enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    // on ne bloque pas l'app si l'API échoue ; affiche juste un message
+                    return;
+                }
+
+                User user = response.body();
+
+                // Sauvegarde des infos essentielles en SharedPreferences
+                SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString("user_name", user.getName());
+                editor.putString("user_level_text", user.getLevel());
+                editor.putInt("user_level", user.getLevelValue());
+                editor.putInt("user_last_score", user.score);
+                // scoreHistory : stocke en simple chaîne csv
+                if (user.scoreHistory != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < user.scoreHistory.size(); i++) {
+                        if (i > 0) sb.append(",");
+                        sb.append(user.scoreHistory.get(i));
+                    }
+                    editor.putString("user_score_history", sb.toString());
+                }
+                editor.apply();
+
+                // Met à jour l'interface principale : Bonjour + nom, puis le texte-guide d'origine
+                if (user.getName() != null && !user.getName().isEmpty()) {
+                    String guide = getString(R.string.main_menu_text);
+                    mainText.setText("Bonjour, " + user.getName() + "\n" + guide);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                // Ne pas planter l'app si l'API est indisponible
+                Toast.makeText(HomeActivity.this, "Impossible de récupérer l'utilisateur", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 }
