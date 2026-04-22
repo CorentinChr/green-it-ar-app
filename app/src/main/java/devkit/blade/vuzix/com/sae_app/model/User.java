@@ -12,6 +12,10 @@ public class User {
     public String level;
     public int score;
     public List<Integer> scoreHistory;
+    // historique spécifique aux quiz "qh" (quiz habitude)
+    public List<Integer> qhScoreHistory;
+    // historique spécifique aux quiz "ar" (quiz classique AR)
+    public List<Integer> arScoreHistory;
 
     public String getName() { return name; }
 

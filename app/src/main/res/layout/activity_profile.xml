@@ -31,7 +31,21 @@
         android:id="@+id/profile_history"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Historique"
+        android:text="Historique Quiz Téléphone"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/profile_qh_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Historique Quiz Habitudes"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/profile_ar_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Historique Quiz AR"
         android:paddingBottom="8dp"/>
 
 </LinearLayout>
