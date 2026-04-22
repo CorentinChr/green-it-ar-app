@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app.retrofit;
+package devkit.blade.vuzix.com.sae_app.data.retrofit;
 
 import devkit.blade.vuzix.com.sae_app.model.User;
 import retrofit2.Call;

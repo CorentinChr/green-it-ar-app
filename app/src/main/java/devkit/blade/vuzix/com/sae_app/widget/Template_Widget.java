@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app;
+package devkit.blade.vuzix.com.sae_app.widget;
 
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -7,6 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import android.widget.RemoteViews;
+
+import devkit.blade.vuzix.com.sae_app.BladeSampleApplication;
+import devkit.blade.vuzix.com.sae_app.R;
 
 /**
  * Implementation of App Widget functionality.

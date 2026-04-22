@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app.retrofit;
+package devkit.blade.vuzix.com.sae_app.data.retrofit;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;

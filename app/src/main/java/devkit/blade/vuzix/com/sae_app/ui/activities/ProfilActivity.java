@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app;
+package devkit.blade.vuzix.com.sae_app.ui.activities;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Arrays;
+import devkit.blade.vuzix.com.sae_app.R;
 
 /**
  * Activité affichant le profil utilisateur : nom, niveau, dernier score et historique.

@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app;
+package devkit.blade.vuzix.com.sae_app.ui.activities;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -16,11 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import android.content.SharedPreferences;
+import devkit.blade.vuzix.com.sae_app.R;
 import devkit.blade.vuzix.com.sae_app.model.QuizItem;
-import devkit.blade.vuzix.com.sae_app.retrofit.QuizApi;
-import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
-import devkit.blade.vuzix.com.sae_app.retrofit.UserApi;
+import devkit.blade.vuzix.com.sae_app.data.retrofit.QuizApi;
+import devkit.blade.vuzix.com.sae_app.data.retrofit.RetrofitClient;
+import devkit.blade.vuzix.com.sae_app.data.retrofit.UserApi;
 import devkit.blade.vuzix.com.sae_app.model.ScorePayload;
 import retrofit2.Call;
 import retrofit2.Callback;

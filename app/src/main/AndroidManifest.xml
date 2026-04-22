@@ -23,7 +23,7 @@
             android:name="com.vuzix.icon.tint" android:value="true" />
         <activity
             android:exported="true"
-            android:name=".HomeActivity">
+            android:name=".ui.activities.HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -39,16 +39,16 @@
 
         </activity>
 
-        <activity android:name=".QuizActivity" />
+        <activity android:name=".ui.activities.QuizActivity" />
         <activity android:name=".qrcode.MainActivity" />
         <activity android:name=".qrcode.WebViewActivity" />
-        <activity android:name=".QuizHabitudeActivity" />
-        <activity android:name=".FicheInfoActivity" />
-        <activity android:name=".ProfilActivity" />
+        <activity android:name=".ui.activities.QuizHabitudeActivity" />
+        <activity android:name=".ui.activities.FicheInfoActivity" />
+        <activity android:name=".ui.activities.ProfilActivity" />
 
         <receiver
             android:exported="true"
-            android:name=".Template_Widget">
+            android:name=".widget.Template_Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -65,7 +65,7 @@
 
         <receiver
             android:exported="true"
-            android:name=".Template_Widget_Update_Receiver">
+            android:name=".widget.Template_Widget_Update_Receiver">
             <intent-filter>
                 <action android:name="com.vuzix.intent.action.UI_DISPLAY_MODE" />
             </intent-filter>

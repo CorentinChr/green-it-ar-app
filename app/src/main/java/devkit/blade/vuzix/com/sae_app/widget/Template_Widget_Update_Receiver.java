@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app;
+package devkit.blade.vuzix.com.sae_app.widget;
 
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;

@@ -1,4 +1,4 @@
-package devkit.blade.vuzix.com.sae_app;
+package devkit.blade.vuzix.com.sae_app.ui.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,10 +10,11 @@ import android.widget.Toast;
 
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
 
+import devkit.blade.vuzix.com.sae_app.R;
 import devkit.blade.vuzix.com.sae_app.qrcode.MainActivity;
 import devkit.blade.vuzix.com.sae_app.model.User;
-import devkit.blade.vuzix.com.sae_app.retrofit.RetrofitClient;
-import devkit.blade.vuzix.com.sae_app.retrofit.UserApi;
+import devkit.blade.vuzix.com.sae_app.data.retrofit.RetrofitClient;
+import devkit.blade.vuzix.com.sae_app.data.retrofit.UserApi;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
